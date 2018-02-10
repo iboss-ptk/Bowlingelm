@@ -16,49 +16,49 @@ intExcludeRange lo hi =
 
 
 frameRolls : Fuzzer Int -> (Int -> Fuzzer Int) -> Fuzzer RollsInNormalFrame
-frameRolls fuzzRoll1 makeFuzzRoll2 =
-    fuzzRoll1
+frameRolls fuzzFirstRoll makeFuzzSecondRoll =
+    fuzzFirstRoll
         |> Fuzz.map
-            (\roll1 ->
-                { fuzzRoll1 = Fuzz.constant roll1
-                , fuzzRoll2 = makeFuzzRoll2 roll1
+            (\firstRoll ->
+                { fuzzFirstRoll = Fuzz.constant firstRoll
+                , fuzzSecondRoll = makeFuzzSecondRoll firstRoll
                 }
             )
         |> Fuzz.andThen
-            (\{ fuzzRoll1, fuzzRoll2 } ->
+            (\{ fuzzFirstRoll, fuzzSecondRoll } ->
                 Fuzz.map2
-                    (\roll1 roll2 ->
-                        { roll1 = { pinCount = roll1 }
-                        , roll2 = { pinCount = roll2 }
+                    (\firstRoll secondRoll ->
+                        { firstRoll = { pinCount = firstRoll }
+                        , secondRoll = { pinCount = secondRoll }
                         }
                     )
-                    fuzzRoll1
-                    fuzzRoll2
+                    fuzzFirstRoll
+                    fuzzSecondRoll
             )
 
 
 invalidFirstRoll : Fuzzer RollsInNormalFrame
 invalidFirstRoll =
     let
-        fuzzRoll1 =
+        fuzzFirstRoll =
             intExcludeRange minPinCount maxPinCount
 
-        fuzzRoll2 =
+        fuzzSecondRoll =
             \_ -> intRange minPinCount maxPinCount
     in
-        frameRolls fuzzRoll1 fuzzRoll2
+        frameRolls fuzzFirstRoll fuzzSecondRoll
 
 
 invalidSecondRoll : Fuzzer RollsInNormalFrame
 invalidSecondRoll =
     let
-        fuzzRoll1 =
+        fuzzFirstRoll =
             intRange minPinCount maxPinCount
 
-        fuzzRoll2 =
-            \roll1 -> intExcludeRange minPinCount (maxPinCount - roll1)
+        fuzzSecondRoll =
+            \firstRoll -> intExcludeRange minPinCount (maxPinCount - firstRoll)
     in
-        frameRolls fuzzRoll1 fuzzRoll2
+        frameRolls fuzzFirstRoll fuzzSecondRoll
 
 
 openFrameRolls : Fuzzer RollsInNormalFrame
@@ -67,13 +67,13 @@ openFrameRolls =
         maxPinCountForOpenFrame =
             9
 
-        fuzzRoll1 =
+        fuzzFirstRoll =
             intRange minPinCount maxPinCountForOpenFrame
 
-        fuzzRoll2 =
-            \roll1 -> intRange 0 (maxPinCountForOpenFrame - roll1)
+        fuzzSecondRoll =
+            \firstRoll -> intRange 0 (maxPinCountForOpenFrame - firstRoll)
     in
-        frameRolls fuzzRoll1 fuzzRoll2
+        frameRolls fuzzFirstRoll fuzzSecondRoll
 
 
 spareRolls : Fuzzer RollsInNormalFrame
@@ -82,34 +82,34 @@ spareRolls =
         maxFirstPinCount =
             9
 
-        fuzzRoll1 =
+        fuzzFirstRoll =
             intRange minPinCount maxFirstPinCount
 
-        fuzzRoll2 =
-            \roll1 -> Fuzz.constant (maxPinCount - roll1)
+        fuzzSecondRoll =
+            \firstRoll -> Fuzz.constant (maxPinCount - firstRoll)
     in
-        frameRolls fuzzRoll1 fuzzRoll2
+        frameRolls fuzzFirstRoll fuzzSecondRoll
 
 
 strikeRolls : Fuzzer RollsInNormalFrame
 strikeRolls =
     let
-        fuzzRoll1 =
+        fuzzFirstRoll =
             Fuzz.constant maxPinCount
 
-        fuzzRoll2 =
+        fuzzSecondRoll =
             \_ -> Fuzz.constant minPinCount
     in
-        frameRolls fuzzRoll1 fuzzRoll2
+        frameRolls fuzzFirstRoll fuzzSecondRoll
 
 
-scoring : Test
-scoring =
+makeFrameTest : Test
+makeFrameTest =
     describe "#makeFrame"
         [ describe "invalid frame"
-            [ fuzz invalidFirstRoll "roll1 is not in range [0, 10] " <|
+            [ fuzz invalidFirstRoll "firstRoll is not in range [0, 10] " <|
                 \rolls -> makeFrame rolls |> Expect.equal (Err "Invalid pin count")
-            , fuzz invalidSecondRoll "roll2 is not in range [0, 10 - roll1.pinCount]" <|
+            , fuzz invalidSecondRoll "secondRoll is not in range [0, 10 - firstRoll.pinCount]" <|
                 \rolls -> makeFrame rolls |> Expect.equal (Err "Invalid pin count")
             ]
         , describe "valid frame"

@@ -18,7 +18,7 @@ type alias Roll =
 
 
 type alias RollsInNormalFrame =
-    { roll1 : Roll, roll2 : Roll }
+    { firstRoll : Roll, secondRoll : Roll }
 
 
 type NormalFrame
@@ -49,8 +49,8 @@ emptyFrame =
     { frame =
         NormalFrame
             (OpenFrame
-                { roll1 = { pinCount = 0 }
-                , roll2 = { pinCount = 0 }
+                { firstRoll = { pinCount = 0 }
+                , secondRoll = { pinCount = 0 }
                 }
             )
     , frameCount = 0
@@ -69,19 +69,24 @@ minPinCount =
 
 
 makeFrame : RollsInNormalFrame -> Result ErrMsg NormalFrame
-makeFrame { roll1, roll2 } =
+makeFrame { firstRoll, secondRoll } =
     let
-        isRoll1Valid =
-            roll1.pinCount >= minPinCount && roll1.pinCount <= maxPinCount
+        isFirstRollValid =
+            firstRoll.pinCount >= minPinCount && firstRoll.pinCount <= maxPinCount
 
-        isRoll2Valid =
-            roll2.pinCount >= minPinCount && roll2.pinCount <= (maxPinCount - roll1.pinCount)
+        isSecondRollValid =
+            secondRoll.pinCount >= minPinCount && secondRoll.pinCount <= (maxPinCount - firstRoll.pinCount)
     in
-        if not (isRoll1Valid && isRoll2Valid) then
+        if not (isFirstRollValid && isSecondRollValid) then
             Err "Invalid pin count"
-        else if roll1.pinCount == maxPinCount then
+        else if firstRoll.pinCount == maxPinCount then
             Ok <| Strike
-        else if roll1.pinCount + roll2.pinCount == maxPinCount then
-            Ok <| Spare { roll1 = roll1, roll2 = roll2 }
+        else if firstRoll.pinCount + secondRoll.pinCount == maxPinCount then
+            Ok <| Spare { firstRoll = firstRoll, secondRoll = secondRoll }
         else
-            Ok <| OpenFrame { roll1 = roll1, roll2 = roll2 }
+            Ok <| OpenFrame { firstRoll = firstRoll, secondRoll = secondRoll }
+
+
+performRoll : FrameWithContext -> Roll -> Result ErrMsg FrameWithContext
+performRoll frameWC newRoll =
+    Ok emptyFrame
