@@ -1,0 +1,4 @@
+{
+  "src/*.elm": {"alternate": "tests/{}Test.elm" , "type": "source" },
+  "tests/*Test.elm": { "alternate": "src/{}.elm" , "type": "test" }
+}
